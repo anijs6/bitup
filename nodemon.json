@@ -1,0 +1,9 @@
+{
+  "restartable": "rs",
+  "verbose": true,
+  "watch": ["src/"],
+  "ignore": ["types.ts"],
+  "delay": "1000",
+  "exec": "node scripts/compile.cjs",
+  "ext": "ts,ejs,yml,json"
+}
