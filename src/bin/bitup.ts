@@ -2,7 +2,9 @@
 import cac from 'cac'
 import { checkNodeVersion } from '../shared/check-data'
 import { readJSONSync } from '../shared/read-file'
-import { normalizeCliArgs, generateConfigByPresets } from '../lib/generate-config'
+import { normalizeCliArgs } from '../lib/generate-config'
+import { build } from '../lib/build'
+import type { CliOptions } from '../types'
 
 const pkgData = readJSONSync(new URL('../../package.json', import.meta.url))
 const cliName = `${pkgData.name}`
@@ -13,19 +15,23 @@ checkNodeVersion(pkgData.engines.node, cliName)
 
 cli
   .command('serve', 'Start dev server', { allowUnknownOptions: true })
-  .option('-p, --presets', 'Add presets to enhance configuration', {
+  .option('--presets <presets>', 'Add presets to enhance configuration', {
     type: [String],
     default: ['node']
   })
-  .option(`-w, --watch`, 'Turn on listening mode default is true', { default: true })
+  .option(`--watch <dirs>`, 'Turn on listening mode default is true', {
+    default: [process.cwd()],
+    type: [String]
+  })
   .option(`--dts`, 'Whether to generate a type declaration .dts files', { default: false })
-  .option(`-e, --entrys`, 'Specify the files to be compiled, support glob mode', {
+  .option(`--entrys`, 'Specify the files to be compiled, support glob mode', {
     type: [String],
     default: ['src/**']
   })
-  .action(options => {
-    const newOptions = normalizeCliArgs('serve', options)
-    console.log(newOptions)
+  .action(async (options: CliOptions) => {
+    const newOptions = await normalizeCliArgs('serve', options)
+    console.log(newOptions.config)
+    build(newOptions.config)
   })
 
 cli

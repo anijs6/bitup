@@ -1,29 +1,26 @@
 import type { BuildOptions } from 'esbuild'
 import glob from 'glob'
 import path from 'path'
-import type { CliCustomOptions, NormalizedArg } from '../types'
+import type { CliCustomOptions, NormalizedArg, CliOptions } from '../types'
 
 /**
- * 序列化cli参数
+ * 序列化cli参数，删除掉cli定义的参数之后就是esbuild需要的参数
  *
  * @param command cli命令
  * @param args cli原有的参数
  * @returns 执行不同逻辑的参数
  */
-export async function normalizeCliArgs(
-  command: 'serve' | 'build',
-  args: { [key: string]: any }
-): Promise<NormalizedArg> {
-  const config = {
+export async function normalizeCliArgs(command: 'serve' | 'build', args: CliOptions): Promise<NormalizedArg> {
+  const normalizedConfig = {
     ...args
-  }
+  } as any
 
-  const haveWatch = typeof args.watch === 'boolean'
-  const watch = haveWatch ? args.watch : command === 'serve'
+  const haveWatch = Array.isArray(args.watch)
+  const watch = haveWatch ? true : command === 'serve'
   const dts = typeof args.dts === 'boolean' ? args.dts : command === 'build'
 
   // 禁用esbuild的watch模式
-  if (haveWatch) delete config.watch
+  if (haveWatch) delete normalizedConfig.watch
   // 指定entryPoints
   if (Array.isArray(args.entrys) && args.entrys.length > 0) {
     const loadFilePromises = args.entrys.map(
@@ -42,10 +39,22 @@ export async function normalizeCliArgs(
       return preResult
     }, [] as Array<string>)
 
-    delete config.entrys
-    config.entryPoints = entryPoints
+    delete normalizedConfig.entrys
+    normalizedConfig.entryPoints = entryPoints
   }
 
+  // 删除cli自带的数据
+  // eslint-disable-next-line no-underscore-dangle
+  delete normalizedConfig['--']
+  delete normalizedConfig.dts
+
+  // 根据预设生成配置
+  const presets = (
+    Array.isArray(args.presets) && args.presets.length > 0 ? args.presets : ['node']
+  ) as CliCustomOptions['presets']
+  delete normalizedConfig.presets
+  const configByPresets = generateConfigByPresets(presets)
+  const config = combineConfig(configByPresets, normalizedConfig)
   return {
     config,
     watch,
@@ -67,8 +76,8 @@ export function generateConfigByPresets(presets: CliCustomOptions['presets']): A
         preConfig = {
           ...preConfig,
           platform: 'node',
-          format: 'esm',
-          target: 'node12'
+          target: 'node12',
+          outdir: 'dist'
         }
       }
       return preConfig
@@ -81,15 +90,33 @@ export function generateConfigByPresets(presets: CliCustomOptions['presets']): A
         ...config,
         entryNames: 'esm/[dir]/[name]',
         format: 'esm',
-        target: 'node12'
+        outExtension: {
+          '.js': '.mjs'
+        }
       },
       {
         ...config,
         entryNames: 'cjs/[dir]/[name]',
         format: 'cjs',
-        target: 'node10'
+        outExtension: {
+          '.js': '.cjs'
+        }
       }
     ]
   }
   return [config]
+}
+
+/**
+ * 将预设生成的配置以及cli传递的配置合并
+ *
+ * @param configByPresets 根据预设生成的配置
+ * @param normalizedConfig cli配置
+ */
+function combineConfig(
+  configByPresets: Array<BuildOptions>,
+  normalizedConfig: BuildOptions
+): Array<BuildOptions> {
+  // TODO: 命令行传递的配置优先级 > 预设生成的配置优先级
+  return configByPresets.map(config => ({ ...config, ...normalizedConfig }))
 }

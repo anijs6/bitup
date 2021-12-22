@@ -9,7 +9,6 @@
     "url": "git+https://github.com/anijs6/bitup.git"
   },
   "author": "",
-  "type": "module",
   "main": "index.js",
   "bin": "dist/bin/bitup.js",
   "scripts": {

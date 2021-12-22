@@ -6,6 +6,9 @@ const external = Object.keys(pkg.dependencies).map(item => item)
 esbuild
   .build({
     entryPoints: ['src/bin/bitup.ts'],
+    outExtension: {
+      '.js': '.mjs'
+    },
     bundle: true,
     platform: 'node',
     target: 'node12',
