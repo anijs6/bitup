@@ -16,7 +16,7 @@ export async function normalizeCliArgs(command: 'serve' | 'build', args: CliOpti
   } as any
 
   const haveWatch = Array.isArray(args.watch)
-  const watch = haveWatch ? true : command === 'serve'
+  const watch = haveWatch ? args.watch || [] : command === 'serve' ? [process.cwd()] : []
   const dts = typeof args.dts === 'boolean' ? args.dts : command === 'build'
 
   // 禁用esbuild的watch模式
@@ -120,3 +120,5 @@ function combineConfig(
   // TODO: 命令行传递的配置优先级 > 预设生成的配置优先级
   return configByPresets.map(config => ({ ...config, ...normalizedConfig }))
 }
+
+console.log(1)

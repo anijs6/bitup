@@ -21,6 +21,7 @@
   "homepage": "https://github.com/anijs6/bitup#readme",
   "dependencies": {
     "cac": "^6.7.12",
+    "chokidar": "^3.5.2",
     "esbuild": "^0.14.6",
     "glob": "^7.2.0",
     "semver": "^7.3.5"

@@ -4,6 +4,7 @@ import { checkNodeVersion } from '../shared/check-data'
 import { readJSONSync } from '../shared/read-file'
 import { normalizeCliArgs } from '../lib/generate-config'
 import { build } from '../lib/build'
+import { watchFiles } from '../lib/watch-handler'
 import type { CliOptions } from '../types'
 
 const pkgData = readJSONSync(new URL('../../package.json', import.meta.url))
@@ -30,8 +31,14 @@ cli
   })
   .action(async (options: CliOptions) => {
     const newOptions = await normalizeCliArgs('serve', options)
-    console.log(newOptions.config)
     build(newOptions.config)
+
+    // 监听目录不为空
+    if (newOptions.watch.length > 0) {
+      watchFiles(newOptions.watch).then(() => {
+        build(newOptions.config)
+      })
+    }
   })
 
 cli

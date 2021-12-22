@@ -7,9 +7,9 @@ const Presets = {
 
 export interface NormalizedArg {
   /**
-   * 是否开启监听模式
+   * 监听目录
    */
-  watch: boolean
+  watch: Array<string>
   /**
    * esbuild配置
    */
